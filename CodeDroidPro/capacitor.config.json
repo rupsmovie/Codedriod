@@ -1,0 +1,6 @@
+{
+  "appId": "com.rupak.codedroidpro",
+  "appName": "CodeDroid Pro",
+  "webDir": "dist",
+  "server": { "androidScheme": "https" }
+}
