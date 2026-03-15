@@ -7,24 +7,21 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: CodeDroidPro
 
     steps:
     - name: Checkout
       uses: actions/checkout@v4
 
-    - name: Setup Node 18
+    - name: Setup Node 22
       uses: actions/setup-node@v4
       with:
-        node-version: '18'
+        node-version: '22'
 
     - name: Install dependencies
-      run: npm ci
+      run: cd CodeDroidPro && npm ci
 
     - name: Build React app
-      run: npm run build
+      run: cd CodeDroidPro && npm run build
 
     - name: Setup Java 17
       uses: actions/setup-java@v4
@@ -35,20 +32,20 @@ jobs:
     - name: Setup Android SDK
       uses: android-actions/setup-android@v3
 
-    - name: Install Capacitor
+    - name: Install Capacitor CLI
       run: npm install -g @capacitor/cli
 
-    - name: Add Android
-      run: npx cap add android || true
+    - name: Add Android platform
+      run: cd CodeDroidPro && npx cap add android || true
 
     - name: Copy web assets
-      run: npx cap copy android
+      run: cd CodeDroidPro && npx cap copy android
 
     - name: Make gradlew executable
-      run: chmod +x android/gradlew
+      run: chmod +x CodeDroidPro/android/gradlew
 
     - name: Build Debug APK
-      run: cd android && ./gradlew assembleDebug --no-daemon
+      run: cd CodeDroidPro/android && ./gradlew assembleDebug --no-daemon
 
     - name: Upload APK
       uses: actions/upload-artifact@v4
