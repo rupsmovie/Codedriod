@@ -6,7 +6,7 @@ import Editor, { DiffEditor } from "@monaco-editor/react";
 // CONSTANTS & CONFIG
 // ═══════════════════════════════════════════════════════
 
-const PISTON_API = "https://emkc.org/api/v2/piston";
+const EXEC_SERVER = "https://didactic-space-orbit-965wqg7q9gv36w7-3001.app.github.dev";
 const ANTHROPIC_API = "https://api.anthropic.com/v1/messages";
 
 const LANGUAGES = {
@@ -395,44 +395,27 @@ export default function App() {
     addLog("cmd", `$ run ${activeTab.name}  [${new Date().toLocaleTimeString()}]`);
     addLog("info", `⟳ Executing ${activeTab.language.toUpperCase()} via AI Engine...`);
     try {
-      const stdinNote = stdin ? `\n\nIf the code requires input, use these values (one per line):\n${stdin}` : "";
-      const res = await fetch(ANTHROPIC_API, {
+      const res = await fetch(`${EXEC_SERVER}/execute`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          model: "claude-sonnet-4-20250514",
-          max_tokens: 2000,
-          messages: [{
-            role: "user",
-            content: `You are a code execution engine. Execute this ${activeTab.language} code EXACTLY as a real compiler/interpreter would.
-
-RULES:
-- Return ONLY the program output (stdout + stderr combined)
-- No explanation, no markdown, no code fences
-- Show exact compiler errors with line numbers if compilation fails
-- Show runtime errors exactly as they would appear
-- If code has infinite loop, show first few iterations then "[Terminated: time limit]"
-- Preserve all whitespace and newlines in output exactly${stdinNote}
-
-Language: ${activeTab.language}
-File: ${activeTab.name}
-
-\`\`\`
-${activeTab.content}
-\`\`\``
-          }]
+          language: activeTab.language,
+          filename: activeTab.name,
+          code: activeTab.content,
+          stdin: stdin || "",
+          timeout: 15000,
         })
       });
       const data = await res.json();
       const elapsed = Date.now() - startTime;
-      const out = data.content?.[0]?.text?.trim() || "(no output)";
-      const isErr = /error|exception|traceback|undefined reference|cannot find symbol|segmentation fault/i.test(out);
+      const out = data.output || "(no output)";
+      const isErr = data.exitCode !== 0;
       addLog(isErr ? "error" : "output", out);
-      setExecStats({ time: elapsed, exitCode: isErr ? 1 : 0, lang: activeTab.language, ver: "AI" });
-      addLog("system", `✓ Exited(${isErr ? 1 : 0}) · ${elapsed}ms · ${new Date().toLocaleTimeString()}`);
+      setExecStats({ time: elapsed, exitCode: data.exitCode ?? 0, lang: activeTab.language, ver: "Local" });
+      addLog("system", `✓ Exited(${data.exitCode ?? 0}) · ${elapsed}ms · ${new Date().toLocaleTimeString()}`);
       addLog("divider", "");
     } catch (err) {
-      addLog("error", `✗ Network error: ${err.message}`);
+      addLog("error", `✗ Server error: ${err.message}\nMake sure execution server is running!`);
       addLog("divider", "");
     }
     setIsRunning(false);
