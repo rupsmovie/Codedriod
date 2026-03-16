@@ -6,7 +6,7 @@ import Editor, { DiffEditor } from "@monaco-editor/react";
 // CONSTANTS & CONFIG
 // ═══════════════════════════════════════════════════════
 
-const EXEC_SERVER = "https://didactic-space-orbit-965wqg7q9gv36w7-3001.app.github.dev";
+const EXEC_SERVER = "https://codedriod-production.up.railway.app";
 const ANTHROPIC_API = "https://api.anthropic.com/v1/messages";
 
 const LANGUAGES = {
