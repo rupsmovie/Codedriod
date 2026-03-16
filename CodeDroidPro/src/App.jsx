@@ -158,6 +158,10 @@ export default function App() {
   const [panel, setPanel]               = useState("explorer");
   const [sidebarOpen, setSidebarOpen]   = useState(true);
   const [rightPanel, setRightPanel]     = useState(null);
+  const [rightPanelW, setRightPanelW]   = useState(320);
+  const [isResizingR, setIsResizingR]   = useState(false);
+  const [bottomPanelH, setBottomPanelH] = useState(200);
+  const [isResizingB, setIsResizingB]   = useState(false);
   const [bottomPanel, setBottomPanel]   = useState("terminal");
   const [terminalOpen, setTerminalOpen] = useState(true);
   const [terminalH, setTerminalH]       = useState(200);
@@ -245,6 +249,53 @@ export default function App() {
   const [activeModal, setActiveModal]     = useState(null);
 
   const T = THEMES[themeName] || THEMES["VS Dark"];
+
+  // Resize handlers
+  const startResizeRight = useCallback((e) => {
+    e.preventDefault();
+    setIsResizingR(true);
+    const startX = e.clientX || e.touches?.[0]?.clientX;
+    const startW = rightPanelW;
+    const onMove = (ev) => {
+      const x = ev.clientX || ev.touches?.[0]?.clientX;
+      const newW = Math.max(220, Math.min(600, startW + (startX - x)));
+      setRightPanelW(newW);
+    };
+    const onUp = () => {
+      setIsResizingR(false);
+      window.removeEventListener('mousemove', onMove);
+      window.removeEventListener('mouseup', onUp);
+      window.removeEventListener('touchmove', onMove);
+      window.removeEventListener('touchend', onUp);
+    };
+    window.addEventListener('mousemove', onMove);
+    window.addEventListener('mouseup', onUp);
+    window.addEventListener('touchmove', onMove);
+    window.addEventListener('touchend', onUp);
+  }, [rightPanelW]);
+
+  const startResizeBottom = useCallback((e) => {
+    e.preventDefault();
+    setIsResizingB(true);
+    const startY = e.clientY || e.touches?.[0]?.clientY;
+    const startH = bottomPanelH;
+    const onMove = (ev) => {
+      const y = ev.clientY || ev.touches?.[0]?.clientY;
+      const newH = Math.max(80, Math.min(600, startH + (startY - y)));
+      setBottomPanelH(newH);
+    };
+    const onUp = () => {
+      setIsResizingB(false);
+      window.removeEventListener('mousemove', onMove);
+      window.removeEventListener('mouseup', onUp);
+      window.removeEventListener('touchmove', onMove);
+      window.removeEventListener('touchend', onUp);
+    };
+    window.addEventListener('mousemove', onMove);
+    window.addEventListener('mouseup', onUp);
+    window.addEventListener('touchmove', onMove);
+    window.addEventListener('touchend', onUp);
+  }, [bottomPanelH]);
   const isDark = T.vs !== "vs-light";
 
   const editorRef   = useRef(null);
@@ -1118,7 +1169,14 @@ ${activeTab.content}
           </div>
 
           {/* ── BOTTOM PANEL ── */}
-          <div style={{ background:T.terminal, borderTop:`1px solid ${T.border}`, flexShrink:0, display:"flex", flexDirection:"column", height:terminalOpen?terminalH:32, transition:"height .2s ease", overflow:"hidden" }}>
+          <div style={{ background:T.terminal, borderTop:`1px solid ${T.border}`, flexShrink:0, display:"flex", flexDirection:"column", height:terminalOpen?bottomPanelH:32, overflow:"hidden", position:"relative" }}>
+            {/* Terminal resize handle */}
+            <div
+              onMouseDown={startResizeBottom}
+              onTouchStart={startResizeBottom}
+              style={{ position:"absolute", top:0, left:0, right:0, height:4, cursor:"row-resize", background:isResizingB?T.accent:"transparent", zIndex:10, transition:"background .15s" }}
+              title="Drag to resize"
+            />
             {/* Panel tabs */}
             <div style={{ display:"flex", alignItems:"center", height:32, flexShrink:0, borderBottom:terminalOpen?`1px solid ${T.border}`:"none", userSelect:"none" }}>
               {[
@@ -1262,7 +1320,14 @@ ${activeTab.content}
 
         {/* ── RIGHT PANEL (AI COPILOT) ── */}
         {rightPanel === "copilot" && (
-          <div className="slide-in" style={{ width:320, background:T.sb, borderLeft:`1px solid ${T.border}`, display:"flex", flexDirection:"column", flexShrink:0 }}>
+          <div className="slide-in" style={{ width:rightPanelW, background:T.sb, borderLeft:`1px solid ${T.border}`, display:"flex", flexDirection:"column", flexShrink:0, position:"relative" }}>
+            {/* Resize handle */}
+            <div
+              onMouseDown={startResizeRight}
+              onTouchStart={startResizeRight}
+              style={{ position:"absolute", left:0, top:0, bottom:0, width:5, cursor:"col-resize", background:isResizingR?T.accent:"transparent", zIndex:10, transition:"background .15s" }}
+              title="Drag to resize"
+            />
             <div style={{ padding:"12px 14px", borderBottom:`1px solid ${T.border}`, display:"flex", justifyContent:"space-between", alignItems:"center", flexShrink:0 }}>
               <div>
                 <div style={{ fontSize:14, fontWeight:700, color:T.text }}>🤖 AI Copilot</div>
