@@ -336,36 +336,49 @@ export default function App() {
     const cfg = LANGUAGES[activeTab.language];
     if (!cfg?.piston) {
       if (activeTab.language === "html") { setShowPreview(true); return; }
-      notify(`${activeTab.language} execution not supported`, "info"); return;
+      notify(`${activeTab.language} — opening preview`, "info");
+      setShowPreview(true); return;
     }
     setIsRunning(true); setTerminalOpen(true); setBottomPanel("terminal");
     const startTime = Date.now();
-    addLog("cmd",  `$ run ${activeTab.name}  [${new Date().toLocaleTimeString()}]`);
-    addLog("info", `⟳ Compiling ${cfg.piston} ${cfg.ver}...`);
+    addLog("cmd", `$ run ${activeTab.name}  [${new Date().toLocaleTimeString()}]`);
+    addLog("info", `⟳ Executing ${activeTab.language.toUpperCase()} via AI Engine...`);
     try {
-      const res = await fetch(`${PISTON_API}/execute`, {
+      const stdinNote = stdin ? `\n\nIf the code requires input, use these values (one per line):\n${stdin}` : "";
+      const res = await fetch(ANTHROPIC_API, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          language: cfg.piston, version: cfg.ver,
-          files: [{ name: activeTab.name, content: activeTab.content }],
-          stdin: stdin || "", args: [],
-          compile_timeout: 30000, run_timeout: 15000,
+          model: "claude-sonnet-4-20250514",
+          max_tokens: 2000,
+          messages: [{
+            role: "user",
+            content: `You are a code execution engine. Execute this ${activeTab.language} code EXACTLY as a real compiler/interpreter would.
+
+RULES:
+- Return ONLY the program output (stdout + stderr combined)
+- No explanation, no markdown, no code fences
+- Show exact compiler errors with line numbers if compilation fails
+- Show runtime errors exactly as they would appear
+- If code has infinite loop, show first few iterations then "[Terminated: time limit]"
+- Preserve all whitespace and newlines in output exactly${stdinNote}
+
+Language: ${activeTab.language}
+File: ${activeTab.name}
+
+\`\`\`
+${activeTab.content}
+\`\`\``
+          }]
         })
       });
       const data = await res.json();
       const elapsed = Date.now() - startTime;
-      if (data.message) {
-        addLog("error", `✗ ${data.message}`);
-      } else if (data.compile?.code !== 0 && data.compile?.output) {
-        addLog("error", `Compile Error:\n${data.compile.output}`);
-      } else {
-        const out = data.run?.output || "(no output)";
-        const isErr = data.run?.code !== 0;
-        addLog(isErr ? "error" : "output", out);
-        setExecStats({ time: elapsed, exitCode: data.run?.code ?? 0, lang: cfg.piston, ver: cfg.ver });
-      }
-      addLog("system", `✓ Exited(${data.run?.code ?? 0}) · ${elapsed}ms · ${new Date().toLocaleTimeString()}`);
+      const out = data.content?.[0]?.text?.trim() || "(no output)";
+      const isErr = /error|exception|traceback|undefined reference|cannot find symbol|segmentation fault/i.test(out);
+      addLog(isErr ? "error" : "output", out);
+      setExecStats({ time: elapsed, exitCode: isErr ? 1 : 0, lang: activeTab.language, ver: "AI" });
+      addLog("system", `✓ Exited(${isErr ? 1 : 0}) · ${elapsed}ms · ${new Date().toLocaleTimeString()}`);
       addLog("divider", "");
     } catch (err) {
       addLog("error", `✗ Network error: ${err.message}`);
