@@ -901,7 +901,7 @@ Actions:
   // RENDER
   // ────────────────────────────────────────────────
   return (
-    <div style={{height:'100vh',display:'flex',flexDirection:'column',background:T.bg,color:T.text,overflow:'hidden',fontFamily:"'JetBrains Mono',Consolas,monospace",fontSize:13,cursor:isResizingSB||isResizingRP?'col-resize':isResizingBP?'row-resize':'default'}}
+    <div style={{height:'100vh',display:'flex',flexDirection:'column',background:T.bg,color:T.text,overflow:'hidden',paddingTop:'env(safe-area-inset-top)',fontFamily:"'JetBrains Mono',Consolas,monospace",fontSize:13,cursor:isResizingSB||isResizingRP?'col-resize':isResizingBP?'row-resize':'default'}}
       onClick={()=>ctxMenu&&setCtxMenu(null)}>
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&display=swap');
@@ -1702,7 +1702,8 @@ Actions:
               )}
 
               {/* Quick actions */}
-              <div style={{padding:'7px 10px',borderBottom:`1px solid ${T.border}`,display:'flex',flexWrap:'wrap',gap:4,flexShrink:0}}>
+              <div style={{padding:'7px 10px',borderBottom:`1px solid ${T.border}`,display:'flex',flexWrap:'wrap',gap:4,flexShrink:0,position:'relative'}}>
+                <button onClick={()=>setRightPanel(null)} style={{position:'absolute',top:2,right:4,background:'none',border:'none',color:T.dim,cursor:'pointer',fontSize:16,lineHeight:1,zIndex:10}}>✕</button>
                 {[
                   ['💡 Explain','Explain this code clearly and simply'],
                   ['🐛 Debug','Find and fix all bugs with explanations'],
