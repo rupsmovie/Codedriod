@@ -1,2 +1,21 @@
 [phases.setup]
-nixPkgs = ["python3", "gcc", "jdk17", "nodejs", "go", "rustc", "php", "ruby"]
+nixPkgs = [
+  "python3", "python3Packages.pip",
+  "gcc", "gpp",
+  "jdk17",
+  "nodejs_20",
+  "go",
+  "rustc", "cargo",
+  "ruby",
+  "php83",
+  "lua",
+  "perl",
+  "git",
+  "curl", "wget",
+  "gnumake",
+  "black",
+  "unzip", "zip"
+]
+
+[phases.install]
+cmds = ["npm install"]
